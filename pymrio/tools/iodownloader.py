@@ -187,7 +187,7 @@ def _download_urls(
 
 
 def download_oecd(
-    storage_folder, version="v2018", years=None, overwrite_existing=False
+    storage_folder, version="v2021", years=None, overwrite_existing=False
 ):
     """Downloads the OECD ICIO tables
 
