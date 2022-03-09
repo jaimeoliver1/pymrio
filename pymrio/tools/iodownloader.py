@@ -7,6 +7,7 @@ import re
 from collections import namedtuple
 
 import requests
+import zipfile
 
 from pymrio.tools.iometadata import MRIOMetaData
 
@@ -78,6 +79,9 @@ OECD_CONFIG = {
             "2014": "http://stats.oecd.org/wbos/fileview2.aspx?IDFile=0190bd9d-31d0-4171-bd1c-82d96b88e469",  # NOQA
             "2015": "http://stats.oecd.org/wbos/fileview2.aspx?IDFile=9f579ef3-4685-45e4-a0ba-d1acbd9755a6",  # NOQA
         },
+        "v2021": {
+            "2015-2018":"https://stats.oecd.org/wbos/fileview2.aspx?IDFile=59a3d7f2-3f23-40d5-95ca-48da84c0f861"
+        }
     },
 }
 
@@ -226,6 +230,8 @@ def download_oecd(
         version = "v2018"
     elif ("3" in version) or ("6" in version):
         version = "v2016"
+    elif ("21" in version):
+        version = "v2021"
     else:
         raise ValueError("Version not understood")
 
@@ -234,6 +240,9 @@ def download_oecd(
     if not years:
         if version == "v2018":
             years = range(2005, 2016)
+        elif version == "v2021":
+            years = ["1995-1999", "2000-2004", "2005-2009", "2010-2014", "2015-2018"]
+
         else:
             years = range(1995, 2012)
     years = [str(yy) for yy in years]
@@ -252,8 +261,11 @@ def download_oecd(
             raise ValueError("Datafile for {} not specified or available.".format(yy))
         if version == "v2016":
             url_to_check = os.path.basename(OECD_CONFIG["datafiles"][version][yy])
+        elif version == "v2021":
+            url_to_check = os.path.basename(OECD_CONFIG["datafiles"][version][yy])
         else:
             url_to_check = OECD_CONFIG["datafiles"][version][yy]
+
         if url_to_check not in oecd_webcontent:
             raise ValueError(
                 "Specified datafile for {} () not found in the current"
@@ -264,18 +276,31 @@ def download_oecd(
 
         filename = "ICIO" + version.lstrip("v") + "_" + yy + ".zip"
         storage_file = os.path.join(storage_folder, filename)
+        '''
         req = requests.get(OECD_CONFIG["datafiles"][version][yy], stream=True)
         with open(storage_file, "wb") as lf:
             for chunk in req.iter_content(1024 * 5):
                 lf.write(chunk)
+
+        '''
+
+        if version=="v2021":
+            with zipfile.ZipFile(storage_file, 'r') as zip_ref:
+                zip_ref.extractall(storage_folder)
+            os.remove(storage_file)
+
+            for file in os.listdir(storage_folder):
+                zipObj = zipfile.ZipFile(os.path.join(storage_folder, file).replace('csv', 'zip') , 'w')
+                zipObj.write(os.path.join(storage_folder, file))
+                os.remove(os.path.join(storage_folder, file))
 
         meta._add_fileio(
             "Downloaded {} to {}".format(
                 OECD_CONFIG["datafiles"][version][yy], filename
             )
         )
+        meta.save()
 
-    meta.save()
     return meta
 
 
