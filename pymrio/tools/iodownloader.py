@@ -280,30 +280,24 @@ def download_oecd(
 
         filename = "ICIO" + version.lstrip("v") + "_" + yy + ".zip"
         storage_file = os.path.join(storage_folder, filename)
-        '''
+        
         req = requests.get(OECD_CONFIG["datafiles"][version][yy], stream=True)
         with open(storage_file, "wb") as lf:
             for chunk in req.iter_content(1024 * 5):
                 lf.write(chunk)
-
-        '''
 
         if version=="v2021":
             with zipfile.ZipFile(storage_file, 'r') as zip_ref:
                 zip_ref.extractall(storage_folder)
             os.remove(storage_file)
 
-            for file in os.listdir(storage_folder):
-                zipObj = zipfile.ZipFile(os.path.join(storage_folder, file).replace('csv', 'zip') , 'w')
-                zipObj.write(os.path.join(storage_folder, file))
-                os.remove(os.path.join(storage_folder, file))
-
         meta._add_fileio(
             "Downloaded {} to {}".format(
                 OECD_CONFIG["datafiles"][version][yy], filename
             )
         )
-        meta.save()
+
+    meta.save()
 
     return meta
 
