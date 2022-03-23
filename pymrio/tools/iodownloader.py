@@ -4,10 +4,10 @@
 import itertools
 import os
 import re
+import zipfile
 from collections import namedtuple
 
 import requests
-import zipfile
 
 from pymrio.tools.iometadata import MRIOMetaData
 
